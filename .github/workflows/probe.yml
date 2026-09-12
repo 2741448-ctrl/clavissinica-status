@@ -1,0 +1,46 @@
+name: probe
+
+# 每 5 分钟一次。GitHub 的 cron 是【尽力而为】的, 高峰时可能延迟几分钟
+# 甚至跳过 —— 这一点写在页面上, 不假装成 5 分钟精度。
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:        # 允许手动触发, 建好之后先手点一次
+
+permissions:
+  contents: write           # 只需要写自己这个仓库
+
+concurrency:
+  group: probe
+  cancel-in-progress: false # 不取消在跑的那一次, 否则会丢样本
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 探测
+        run: python3 scripts/probe.py
+
+      - name: 提交结果
+        run: |
+          if git diff --quiet -- status.json; then
+            echo "status.json 没变化, 不提交"
+            exit 0
+          fi
+          git config user.name  "status-probe"
+          git config user.email "status-probe@users.noreply.github.com"
+          git add status.json
+          git commit -m "probe $(date -u +%Y-%m-%dT%H:%MZ)"
+          # 两次探测可能撞车(上一次还没推完)。rebase 后重试一次,
+          # 再失败就放弃这一个样本 —— 丢一个样本比让分支打结好。
+          for i in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "push 失败, 第 $i 次重试"
+            git pull --rebase --autostash || true
+            sleep 5
+          done
+          echo "三次都没推上去, 放弃这个样本"
+          exit 0

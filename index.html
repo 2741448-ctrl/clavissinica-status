@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Clavis Sinica API · Status</title>
+<meta name="description" content="Measured availability of the Clavis Sinica API. Checks run from outside our infrastructure.">
+<style>
+  :root{
+    --bg:#faf9f7; --fg:#1c1a17; --muted:#6b6560; --line:#e5e1db;
+    --up:#2e7d5b; --down:#b03a2e; --none:#d8d4ce; --card:#fff;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#171614;--fg:#eceae6;--muted:#96908a;--line:#2e2b28;
+          --up:#4caf88;--down:#e06c5c;--none:#3a3733;--card:#1f1e1b;}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+       "Helvetica Neue","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;}
+  .wrap{max-width:820px;margin:0 auto;padding:48px 20px 80px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 32px}
+  .banner{padding:16px 20px;border-radius:10px;border:1px solid var(--line);
+          background:var(--card);margin-bottom:28px;display:flex;
+          align-items:center;gap:12px;font-weight:600}
+  .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .dot.up{background:var(--up)} .dot.down{background:var(--down)}
+  .dot.none{background:var(--none)}
+  .card{border:1px solid var(--line);border-radius:10px;background:var(--card);
+        padding:18px 20px;margin-bottom:14px}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .name{font-weight:600}
+  .what{color:var(--muted);font-size:13px;margin-top:2px}
+  .pct{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;white-space:nowrap}
+  .bars{display:flex;gap:2px;margin-top:12px;height:26px;align-items:stretch}
+  .bar{flex:1;min-width:2px;border-radius:1px;background:var(--none)}
+  .bar.up{background:var(--up)} .bar.part{background:#d8a13a} .bar.down{background:var(--down)}
+  .axis{display:flex;justify-content:space-between;color:var(--muted);
+        font-size:12px;margin-top:6px}
+  h2{font-size:15px;margin:34px 0 10px;letter-spacing:.02em;
+     text-transform:uppercase;color:var(--muted)}
+  .note{color:var(--muted);font-size:13.5px;border-left:2px solid var(--line);
+        padding-left:14px;margin:10px 0}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  td.t{color:var(--muted);white-space:nowrap;width:170px;font-variant-numeric:tabular-nums}
+  code{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+       background:var(--line);padding:1px 5px;border-radius:4px}
+  a{color:inherit}
+  footer{margin-top:44px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Clavis Sinica API · Status</h1>
+  <p class="sub" id="sub">Loading…</p>
+
+  <div class="banner"><span class="dot none" id="bdot"></span>
+    <span id="btext">Loading…</span></div>
+
+  <div id="components"></div>
+
+  <h2>Last 24 hours</h2>
+  <div class="card">
+    <div class="bars" id="recent"></div>
+    <div class="axis"><span>24h ago</span><span>now</span></div>
+    <div class="what" id="recentnote" style="margin-top:10px"></div>
+  </div>
+
+  <h2>Recent events</h2>
+  <div class="card"><table id="events"><tr><td>—</td></tr></table></div>
+
+  <h2>How this page works</h2>
+  <div class="note">
+    Checks run on GitHub's infrastructure, <strong>not on the servers being
+    checked</strong>. If our machine goes down, this page keeps reporting —
+    that is the whole reason it lives here.
+  </div>
+  <div class="note">
+    Scheduled every 5&nbsp;minutes. GitHub's scheduler is best-effort and can
+    be delayed or skipped when it is busy, so <strong>a gap in the history
+    means the check did not run, not that the service was down</strong>.
+    Gaps are drawn in grey, never as green.
+  </div>
+  <div class="note">
+    The API health endpoint returns HTTP&nbsp;200 even when it is degraded and
+    says so in the response body. This probe reads the body, so a degraded
+    engine shows up here as degraded.
+  </div>
+  <div class="note">
+    <strong>No uptime SLA is offered.</strong> This page reports what was
+    measured. It is not a commitment, and the numbers cover only the period
+    since measurement began — shown above, so a short history cannot be
+    mistaken for a long one.
+  </div>
+
+  <footer>
+    Docs: <a href="https://clavissinica.org/guide.html">guide</a> ·
+    <a href="https://clavissinica.org/openapi.json">openapi.json</a> ·
+    raw data: <a href="./status.json">status.json</a>
+  </footer>
+</div>
+
+<script>
+const COMPONENTS = [
+  ["api",     "API",                  "Requests reach the service and it answers"],
+  ["auth",    "Authentication",       "API keys are checked and rejected correctly"],
+  ["engine",  "Decomposition engine", "The engine behind the ten capabilities"],
+  ["storage", "Ledger",               "Balances, debits and task records"],
+  ["site",    "Docs site",            "clavissinica.org"],
+];
+
+function pct(n, d){ return d ? (Math.round(n / d * 1000) / 10).toFixed(1) + "%" : "—"; }
+function esc(s){ return String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+fetch("./status.json?" + Date.now()).then(r => r.json()).then(render).catch(() => {
+  document.getElementById("sub").textContent =
+    "Could not load status.json — the probe may not have run yet.";
+});
+
+function render(d){
+  const days = d.days || [], samples = d.samples || [];
+  const comp = d.components || {};
+
+  const allUp = COMPONENTS.every(([k]) => comp[k] && comp[k].up);
+  const anyKnown = COMPONENTS.some(([k]) => comp[k]);
+  const bdot = document.getElementById("bdot"), btext = document.getElementById("btext");
+  if (!anyKnown){ bdot.className = "dot none"; btext.textContent = "No data yet"; }
+  else if (allUp){ bdot.className = "dot up"; btext.textContent = "All systems operational"; }
+  else {
+    bdot.className = "dot down";
+    const bad = COMPONENTS.filter(([k]) => comp[k] && !comp[k].up).map(([,n]) => n);
+    btext.textContent = "Degraded — " + bad.join(", ");
+  }
+
+  document.getElementById("sub").textContent =
+    "Last checked " + (d.generated_at || "—") +
+    " · " + (d.total_samples || 0) + " checks since " + (d.first_seen || "—") +
+    " · all times UTC";
+
+  const host = document.getElementById("components");
+  host.innerHTML = "";
+  for (const [key, name, what] of COMPONENTS){
+    const c = comp[key];
+    const up = days.reduce((a, x) => a + ((x.up || {})[key] || 0), 0);
+    const n  = days.reduce((a, x) => a + (x.n || 0), 0);
+    const el = document.createElement("div");
+    el.className = "card";
+    el.innerHTML =
+      '<div class="row"><div><span class="dot ' +
+        (c ? (c.up ? "up" : "down") : "none") + '" style="display:inline-block;margin-right:8px"></span>' +
+        '<span class="name">' + esc(name) + '</span>' +
+        '<div class="what" style="margin-left:19px">' + esc(what) +
+        (c && c.ms != null ? " · " + c.ms + " ms" : "") + '</div></div>' +
+      '<div class="pct">' + pct(up, n) + ' <span style="opacity:.6">of ' + n + '</span></div></div>' +
+      '<div class="bars">' + days.map(x => {
+          const u = (x.up || {})[key] || 0, t = x.n || 0;
+          const cls = !t ? "none" : (u === t ? "up" : (u === 0 ? "down" : "part"));
+          return '<div class="bar ' + cls + '" title="' + esc(x.d) + ' — ' +
+                 pct(u, t) + ' of ' + t + '"></div>';
+        }).join("") + '</div>' +
+      '<div class="axis"><span>' + (days.length ? esc(days[0].d) : "") +
+        '</span><span>' + (days.length ? esc(days[days.length - 1].d) : "") + '</span></div>';
+    host.appendChild(el);
+  }
+
+  const rec = document.getElementById("recent");
+  rec.innerHTML = samples.map(s => {
+      const bad = COMPONENTS.some(([k]) => s[k] === 0);
+      return '<div class="bar ' + (bad ? "down" : "up") +
+             '" title="' + esc(s.t) + (s.ms != null ? " · " + s.ms + " ms" : "") + '"></div>';
+    }).join("") || '<div class="bar none"></div>';
+  document.getElementById("recentnote").textContent =
+    samples.length + " checks in the window. Grey means no check ran.";
+
+  // 事件 = 连续的 down 段, 从明细里推出来
+  const ev = [];
+  let cur = null;
+  for (const s of samples){
+    const bad = COMPONENTS.filter(([k]) => s[k] === 0).map(([,n]) => n);
+    if (bad.length){
+      if (cur) { cur.end = s.t; cur.n++; bad.forEach(b => cur.what.add(b)); }
+      else cur = {start: s.t, end: s.t, n: 1, what: new Set(bad)};
+    } else if (cur){ ev.push(cur); cur = null; }
+  }
+  if (cur) ev.push(cur);
+  const tb = document.getElementById("events");
+  tb.innerHTML = ev.length
+    ? ev.reverse().map(e =>
+        '<tr><td class="t">' + esc(e.start) + '</td><td>' +
+        esc([...e.what].join(", ")) + ' — ' + e.n +
+        ' consecutive check' + (e.n > 1 ? "s" : "") + '</td></tr>').join("")
+    : '<tr><td>No failed checks in the last 24 hours.</td></tr>';
+}
+</script>
+</body>
+</html>
