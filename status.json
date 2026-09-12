@@ -1,8 +1,51 @@
 {
- "generated_at": null,
- "first_seen": null,
- "components": {},
- "days": [],
- "samples": [],
- "total_samples": 0
+ "components": {
+  "api": {
+   "ms": 775,
+   "up": true
+  },
+  "auth": {
+   "ms": 542,
+   "up": true
+  },
+  "engine": {
+   "ms": null,
+   "up": true
+  },
+  "site": {
+   "ms": 814,
+   "up": true
+  },
+  "storage": {
+   "ms": null,
+   "up": true
+  }
+ },
+ "days": [
+  {
+   "d": "2026-09-12",
+   "n": 1,
+   "up": {
+    "api": 1,
+    "auth": 1,
+    "engine": 1,
+    "site": 1,
+    "storage": 1
+   }
+  }
+ ],
+ "first_seen": "2026-09-12T22:02:32Z",
+ "generated_at": "2026-09-12T22:02:32Z",
+ "samples": [
+  {
+   "api": 1,
+   "auth": 1,
+   "engine": 1,
+   "ms": 775,
+   "site": 1,
+   "storage": 1,
+   "t": "2026-09-12T22:02:32Z"
+  }
+ ],
+ "total_samples": 1
 }
