@@ -1,11 +1,11 @@
 {
  "components": {
   "api": {
-   "ms": 1093,
+   "ms": 733,
    "up": true
   },
   "auth": {
-   "ms": 716,
+   "ms": 786,
    "up": true
   },
   "engine": {
@@ -13,7 +13,7 @@
    "up": true
   },
   "site": {
-   "ms": 1117,
+   "ms": 879,
    "up": true
   },
   "storage": {
@@ -340,20 +340,22 @@
     "site": 6,
     "storage": 6
    }
+  },
+  {
+   "d": "2026-10-11",
+   "n": 1,
+   "up": {
+    "api": 1,
+    "auth": 1,
+    "engine": 1,
+    "site": 1,
+    "storage": 1
+   }
   }
  ],
  "first_seen": "2026-09-12T22:02:32Z",
- "generated_at": "2026-10-10T23:54:50Z",
+ "generated_at": "2026-10-11T05:01:26Z",
  "samples": [
-  {
-   "api": 1,
-   "auth": 1,
-   "engine": 1,
-   "ms": 1075,
-   "site": 1,
-   "storage": 1,
-   "t": "2026-10-10T00:50:12Z"
-  },
   {
    "api": 1,
    "auth": 1,
@@ -398,7 +400,16 @@
    "site": 1,
    "storage": 1,
    "t": "2026-10-10T23:54:50Z"
+  },
+  {
+   "api": 1,
+   "auth": 1,
+   "engine": 1,
+   "ms": 733,
+   "site": 1,
+   "storage": 1,
+   "t": "2026-10-11T05:01:26Z"
   }
  ],
- "total_samples": 158
+ "total_samples": 159
 }
